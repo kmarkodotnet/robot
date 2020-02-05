@@ -1,5 +1,6 @@
 #include <SoftwareSerial.h> 
 
+#define ASCII_BASE 48
 #define DO_NOTHING   0
 #define GO_FW   1
 #define GO_BW   2
@@ -18,11 +19,11 @@
 //#define BT_SERIAL_RX    11 //Rx pin
 //#define BT_SERIAL_TX    10 //Tx pin
 
-const int DoNothing = DO_NOTHING;
-const int GoForward = GO_FW;
-const int GoBackward = GO_BW;
-const int GoRight = GO_R;
-const int GoLeft= GO_L;
+const int DoNothing = ASCII_BASE + DO_NOTHING;
+const int GoForward = ASCII_BASE + GO_FW;
+const int GoBackward = ASCII_BASE + GO_BW;
+const int GoRight = ASCII_BASE + GO_R;
+const int GoLeft= ASCII_BASE + GO_L;
 
 const int RightMotorBackward   = EN1_PIN;
 const int RightMotorForward   = EN2_PIN;
@@ -32,6 +33,7 @@ const int RightMotorStart = ENA_PIN;
 const int LeftMotorStart  = ENB_PIN;
 
 int iSpeed              = 255; //speed, range 0 to 255
+int oldIncomingByte = -1;
 int incomingByte = 0; // for incoming serial data
 int defaultDelay = 10;  //delay for moving operations
 
@@ -88,23 +90,27 @@ void Stop(int d){
 }
 
 void Forward(int d){
-  RightForward(d);
-  LeftForward(d);
+  RightForward(0);
+  LeftForward(0);
+  delay(d * DELAY_UNIT);
 }
 
 void Backward(int d){
-  RightBackward(d);
-  LeftBackward(d);
+  RightBackward(0);
+  LeftBackward(0);
+  delay(d * DELAY_UNIT);
 }
 
 void Right(int d){
-  LeftForward(d);
-  RightBackward(d);
+  LeftForward(0);
+  RightBackward(0);
+  delay(d * DELAY_UNIT);
 }
 
 void Left(int d){
-  LeftBackward(d);
-  RightForward(d);
+  LeftBackward(0);
+  RightForward(0);
+  delay(d * DELAY_UNIT);
 }
 
 
@@ -120,32 +126,41 @@ void setup()
     pinMode(LeftMotorBackward,    OUTPUT); 
     pinMode(RightMotorStart, OUTPUT);
     pinMode(LeftMotorStart,  OUTPUT);
+
     
+    Serial.println(1);
 }
 
 void loop() 
 {
-  if (Serial.available() > 0) {
+  //if (Serial.available() > 0) {
+    //delay(1000);
+    //Serial.write(1);
+    //Serial.write("as");
     incomingByte = Serial.read();
-    switch (incomingByte) {
-      case DoNothing:
-        break;
-      case GoForward:
-        Forward(defaultDelay);
-        break;
-      case GoBackward:
-        Backward(defaultDelay);
-        break;
-      case GoRight:
-        Right(defaultDelay);
-        break;
-      case GoLeft:
-        Left(defaultDelay);
-        break;
-      default:
-        // statements
-        break;
+    if(oldIncomingByte != incomingByte ){
+      switch (incomingByte) {
+          case DoNothing:
+            Stop(defaultDelay);
+            break;
+          case GoForward:
+            Forward(defaultDelay);
+            break;
+          case GoBackward:
+            Backward(defaultDelay);
+            break;
+          case GoRight:
+            Right(defaultDelay);
+            break;
+          case GoLeft:
+            Left(defaultDelay);
+            break;
+          default:
+            break;
+      }      
     }
-    Stop(defaultDelay);
-  }
+    oldIncomingByte = incomingByte;
+    //Serial.println("asd");
+    //Stop(defaultDelay);
+  //}
 }
